@@ -49,4 +49,3 @@ for line in list2: #iterate through the corrected list
     calval_list2.append(calval_int2) #append the number to the calval list
 
 sum2 = sum(calval_list2) #sum all the calibration values 
-#incorrect sum...where there are overlapping words sharing a letter
