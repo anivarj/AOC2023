@@ -21,23 +21,23 @@ sum1 = sum(calval_list) #sum all the calibration values
 #Puzzle 1-2
 #replace text numbers with digits and sum again
 import re
-number_dict = {'one': '1',
-               'two': '2',
-               'three': '3',
-               'four': '4',
-               'five': '5',
-               'six': '6',
-               'seven': '7',
-               'eight': '8',
-               'nine': '9'
+number_dict = {'one': 'o1e',
+               'two': 't2o',
+               'three': 'thr3e',
+               'four': 'fo4r',
+               'five': 'f5ve',
+               'six': 's6x',
+               'seven': 's7ven',
+               'eight': 'ei8ght',
+               'nine': 'n9ne'
                }
 list2 = [] #list for the substituted strings
 
 for line in lines: #for each line of the file
     linecopy = line #make a copy of the line
     for key, value in number_dict.items(): #iterate through dictionary
-        if key in linecopy: #if a word is found in the string
-            linecopy = re.sub(key, value, linecopy) #replace the string portion with the digit
+        linecopy = re.sub(key, value, linecopy) #replace the string portion with the digit
+        
     list2.append(linecopy) #add this substituted string to the new list 
 
     
@@ -49,4 +49,4 @@ for line in list2: #iterate through the corrected list
     calval_list2.append(calval_int2) #append the number to the calval list
 
 sum2 = sum(calval_list2) #sum all the calibration values 
-#incorrect sum...where is the issue??
+#incorrect sum...where there are overlapping words sharing a letter
