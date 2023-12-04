@@ -1,39 +1,42 @@
 import re
 import pandas as pd
-idx = pd.IndexSlice
 
 file = r'C:\Users\AMICHAUD\OneDrive - Promega Corporation\Documents\GitHub\AOC2023\AM_2-1.txt'
 
 with open(file, 'r') as f:
     lines = [line.strip() for line in f]
-#12 red cubes, 13 green cubes, and 14 blue cubes
 
 block_dict = {"red": 12, "green": 13, "blue": 14} #criteria for max blocks
 
-def get_game_info(lines): #sort games into dictionary
-    games_dict = {}
+#sort games into dict
+def get_game_info(lines): 
+    games_dict = {} #final dictionary of all games
+    
     for line in lines:
         game = line.split(":")[0] #split the game off from the line
-        rounds_list = line.split(":")[1] #take the other half of the line with rounds
+        rounds_list = line.split(":")[1] #take the other half of the line for rounds
         gamenumber = game.split(" ")[1] #get the game number
         rounds_sep = rounds_list.split(";") #make a list of individual rounds to the game
         counter = 1
         rounddict = {} #dictionary for rounds
-        for round in rounds_sep:
+        
+        for round in rounds_sep: #for each round of a game...
             round_number = counter
             colors = round.split(",") #split the single round into colors
-            colordict = {}
-            for color in colors: #for each color...
+            colordict = {} #dictionary for the colors in a round
+            
+            for color in colors: #for each color in the round...
                 amount = re.findall('\d+',color) #find the digit
-                blockcolor = [c for c in block_dict.keys() if c in color] #find the color based on dictionary keys
+                blockcolor = [c for c in block_dict.keys() if c in color] #find the color based on dictionary keys. this is old but i don't feel like changing it.
                 colordict[blockcolor[0]] = amount[0] #extract the block color and number of blocks from the lists
             rounddict[str(round_number)] = colordict #make dictionary entry in the round dictionary
-            counter+= 1 #advance counter 1 to generate the next round number
+            counter+= 1 #advance counter 1 to generate the next round number for the dict key
         
-        games_dict[gamenumber] = rounddict #add the game number entry to the game dictionary
+        games_dict[gamenumber] = rounddict #add the game entry to the game dictionary
     return(games_dict)
 
-def dict_to_df(dict): #takes dictionary and turns into multi-level dataframe
+#takes dictionary and turns into multi-level dataframe
+def dict_to_df(dict): 
     df = pd.DataFrame.from_dict(games_dict, orient="index").stack().to_frame() #create df from dict
     df = pd.DataFrame(df[0].values.tolist(), index=df.index) #  to break out the lists of rounds into columns
     df = df.fillna(0) #fill any missing colors marked as "NaN" with 0
