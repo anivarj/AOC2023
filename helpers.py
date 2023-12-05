@@ -1,7 +1,7 @@
 import time
 import functools
 from pathlib import Path
-from typing import Callable
+from typing import Callable, TypeVar, Any, cast
 
 def input_as_list(
     filepath: Path,
@@ -15,10 +15,12 @@ def input_as_list(
         ]
     return output
 
+T = TypeVar('T')  # Type variable to capture the return type of the decorated function
+
 def time_fxn(print_val: bool = True):
-    def decorator(func: Callable):
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @functools.wraps(func)
-        def wrapper_time_fxn(*args, **kwargs):
+        def wrapper_time_fxn(*args: Any, **kwargs: Any) -> T:
             start_time = time.perf_counter()
             val = func(*args, **kwargs)
             end_time = time.perf_counter()
@@ -28,8 +30,9 @@ def time_fxn(print_val: bool = True):
             else:
                 print(f"Finished {func.__name__!r} in {run_time:.4f} secs")
             return val
-        return wrapper_time_fxn
+        return cast(Callable[..., T], wrapper_time_fxn)
     return decorator
+
 
 CHAR_MAP = {
     'one': '1',
