@@ -1,7 +1,10 @@
+import json
 import time
 import functools
 from pathlib import Path
 from typing import Callable, TypeVar, Any, cast
+
+PERF = {}
 
 def input_as_list(
     filepath: Path,
@@ -29,10 +32,24 @@ def time_fxn(print_val: bool = True):
                 print(f"Finished {func.__name__!r} in {run_time:.4f} secs with return value {val}")
             else:
                 print(f"Finished {func.__name__!r} in {run_time:.4f} secs")
+            PERF[f'{func.__name__!r}'] = run_time
             return val
         return cast(Callable[..., T], wrapper_time_fxn)
     return decorator
 
+def log_performance(
+    file_name: str,
+    perf: dict[str, float],
+    file_path: Path = Path('perf.json'),
+) -> None:
+    with open(file_path, 'r') as f:
+        data = json.load(f)
+    data[file_name] = perf
+    with open(file_path, 'w') as f:
+        json.dump(data, f, indent=4)
+
+
+    
 
 CHAR_MAP = {
     'one': '1',

@@ -6,7 +6,7 @@ from helpers import (
 )
 
 @time_fxn()
-def main(
+def total_computation(
     input_file_path: Path
 ) -> str:
     res = shared_computation(
@@ -32,6 +32,6 @@ def part_2(
     ...
 
 if __name__ == "__main__":
-    main(
+    total_computation(
         Path('')
     )
