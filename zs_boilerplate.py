@@ -3,10 +3,12 @@ from pathlib import Path
 from helpers import (
     input_as_list,
     time_fxn,
+    PERF,
+    log_performance,
 )
 
 @time_fxn()
-def total_computation(
+def main(
     input_file_path: Path
 ) -> str:
     res = shared_computation(
@@ -32,6 +34,10 @@ def part_2(
     ...
 
 if __name__ == "__main__":
-    total_computation(
+    main(
         Path('')
+    )
+    log_performance(
+        f'{Path(__file__).stem}',
+        PERF,
     )
