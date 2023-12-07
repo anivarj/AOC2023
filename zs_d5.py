@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from tqdm import tqdm
+
 from helpers import (
     input_as_list,
     time_fxn,
@@ -7,110 +9,149 @@ from helpers import (
     log_performance,
 )
 
+SEQUENCES = [
+    'seed-to-soil',
+    'soil-to-fertilizer',
+    'fertilizer-to-water',
+    'water-to-light',
+    'light-to-temperature',
+    'temperature-to-humidity',
+    'humidity-to-location'
+]
+
 def parse_maps(
     string_input: list[str],
-) -> dict[str, dict[int, int]]:
+) -> dict[str, tuple[int, int]]:
     maps = {}
     start = 0
     parse = string_input[2:]
     for line_idx, line in enumerate(parse):
-        print(f'line {line_idx+1} / {len(parse)}')
         if len(line) > 0 and not line[0].isdigit():
             start = line_idx
         if len(line) == 0 or line_idx == len(parse) - 1:
             end = line_idx
-            maps[parse[start].split(' ')[0]] = dict_factory(
-                list_of_string = parse,
-                start = start,
-                end = end,
-                add_one = line_idx == len(parse) - 1
-            )
+            if line_idx == len(parse) - 1:
+                end = line_idx + 1
+            maps[parse[start].split(' ')[0]] = (start+1, end)
     return maps
 
-def dict_factory(
-    list_of_string: list[str],
-    start: int,
-    end: int,
-    add_one: bool,
-) -> dict[int, int]:
-    res = {}
-    end = end + 1 if add_one else end
-    codes = list_of_string[start+1: end]
+def solver(
+    string_input: list[str],
+    code_lines: tuple[int, int],
+    input_val: int,
+) -> int:
+    parse = string_input[2:]
+    start, stop = code_lines
+    codes = parse[start: stop]
     for code in codes:
-        ranges = code.split(' ')
-        dest_range_start = int(ranges[0])
-        source_range_start = int(ranges[1])
-        range_len = int(ranges[2])
-        dest_range = range(dest_range_start, dest_range_start + range_len)
-        source_range = range(source_range_start, source_range_start + range_len)
-        res.update(
-            {
-                source: dest
-                for source, dest in zip(source_range, dest_range)
-            }
-        )
-    return res
+        ranges = [
+            int(val)
+            for val in code.split(' ')
+        ]
+        dest_rng_start, src_rng_start, rng_len = ranges
+        if input_val >= src_rng_start and input_val < (src_rng_start + rng_len):
+            # now we can map the input val to output vals
+            diff = input_val - src_rng_start
+            return dest_rng_start + diff
+    #default condition       
+    return input_val
 
 @time_fxn()
 def total_computation(
     input_file_path: Path
 ) -> str:
-    seeds, maps = shared_computation(
+    string_input, seeds, maps = shared_computation(
         input_file_path,
     )
-    part_1(seeds, maps)
-    part_2()
+    part_1(string_input, seeds, maps)
+    part_2(string_input, seeds, maps)
     return 'yay, finished!'
 
 @time_fxn(print_val=False)
 def shared_computation(
     input_file_path: Path,
-) -> tuple[list[str], dict[str, dict[int, int]]]:
+) -> tuple[list[str], list[int], dict[str, tuple[int, int]]]:
     string_input = input_as_list(input_file_path)
-    seeds = string_input[0].split('seeds: ')[-1].split(' ')
+    seeds = [
+        int(seed)
+        for seed in string_input[0].split('seeds: ')[-1].split(' ')
+    ]
     maps = parse_maps(string_input)
-    print('maps')
-    for k, v in maps.items():
-        print(k, len(v))
-    return seeds, maps
+    return string_input, seeds, maps
 
 @time_fxn()
 def part_1(
+    string_input: list[str],
     seeds: list[int],
-    maps: dict[str, dict[int, int]],
-) -> None:
-    loc_nums = []
-    for seed in seeds:
-        soil = try_to_map(maps, 'seed-to-soil', int(seed))
-        fert = try_to_map(maps, 'soil-to-fertilizer', soil)
-        water = try_to_map(maps, 'fertilizer-to-water', fert)
-        light = try_to_map(maps, 'water-to-light', water)
-        temp = try_to_map(maps, 'light-to-temperature', light)
-        humid = try_to_map(maps, 'temperature-to-humidity', temp)
-        location = try_to_map(maps, 'humidity-to-location', humid)
-        loc_nums.append(location)
-    print(loc_nums)
-    return min(loc_nums)
-
-def try_to_map(
-    maps: dict[str, dict[int, int]],
-    string_key: str,
-    int_key: int,
+    maps: dict[str, tuple[int, int]],
 ) -> int:
-    try:
-        res = maps[string_key][int_key]
-    except KeyError:
-        res = int_key
-    return res
+    return return_min_loc(string_input, seeds, maps)
+
+def return_min_loc(string_input, seeds, maps) -> int:
+    loc_vals = []
+    for seed in seeds:
+        for sequence in SEQUENCES:
+            seed = solver(
+                string_input=string_input,
+                code_lines=maps[sequence],
+                input_val=seed
+            )
+        loc_vals.append(seed)
+    return min(loc_vals)
 
 @time_fxn()
 def part_2(
+    string_input: list[str],
+    seeds: list[int],
+    maps: dict[str, tuple[int, int]],
 ) -> None:
-    ...
+    intervals = []
+    for start_idx in range(0, len(seeds), 2):
+        start_val = seeds[start_idx]
+        seed_range = (start_val, start_val+seeds[start_idx+1])
+        intervals.append(seed_range)
+
+    merged = merge_intervals(intervals)
+    min_locs = []
+    for seed_range_ends in merged:
+        seed_range = range(seed_range_ends[0], seed_range_ends[1])
+        for seed in seed_range:
+            min_locs.append(
+                return_min_loc(
+                    string_input, [seed], maps
+                )
+            )
+            break
+    for seed_range_ends in merged:
+        seed_range = range(seed_range_ends[0], seed_range_ends[1])
+        for seed in tqdm(seed_range):
+            min_locs.append(
+                return_min_loc(
+                    string_input, [seed], maps
+                )
+            )
+            min_locs = [min(min_locs)]
+    return min(min_locs)
+
+def merge_intervals(
+    intervals: list[tuple[int, int]],
+) -> list[tuple[int, int]]:
+    merged = []
+    intervals.sort(key=lambda x: x[0])
+    merged.append(intervals[0])
+    for current in intervals[1:]:
+        last_merged = merged[-1]
+        if current[0] <= last_merged[1]:
+            merged[-1] = (last_merged[0], max(last_merged[1], current[1]))
+        else:
+            merged.append(current)
+    return merged
+
+
 
 if __name__ == "__main__":
     total_computation(
-        Path('./zs_d5_test.txt')
+        Path('./zs_d5.txt')
     )
     log_performance(
         f'{Path(__file__).stem}',
